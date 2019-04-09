@@ -145,7 +145,11 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 sess = tf.InteractiveSession()
 sess.run(tf.initialize_all_variables())
 
-for i in range(2000):
+saver = tf.train.Saver()
+saver = tf.train.import_meta_graph('./checkpoint/MyModel.meta')
+saver.restore(sess, tf.train.latest_checkpoint('./checkpoint'))
+
+for i in range(500):
 	rand_index = np.random.choice(x_train.shape[0], size = 32)
 	rand_x = x_train[rand_index]
 	rand_y = y_train[rand_index]
@@ -184,6 +188,9 @@ test_feed_dict = {
 }
 test_accuracy = accuracy.eval(test_feed_dict)
 test_loss = cross_entropy.eval(test_feed_dict)
+
+# saver.save(sess, './checkpoint_dir/MyModel')
+
 print("accuracy on test data %g, loss on test data %g"%(test_accuracy, test_loss))
 
 
