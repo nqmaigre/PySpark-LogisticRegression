@@ -107,7 +107,7 @@ for i in range(7220):
 	slot_one_hot = [0] * 48
 	slot_one_hot[slot-1] = 1
 	item += slot_one_hot
-	item += [1 if is_weekend else 0]
+	# item += [1 if is_weekend else 0]
 	others.append(item)
 
 # inflows = np.array(inflows)
