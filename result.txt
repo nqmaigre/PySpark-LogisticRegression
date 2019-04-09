@@ -1,17 +1,32 @@
-[2, 100, 5, 0.4460464254083335]
-[2, 100, 10, 0.7134302962117531]
-[2, 100, 20, 0.6044604076177749]
-[2, 100, 50, 0.515560131337303]
-[2, 100, 100, 0.8301016213691887]
-[2, 100, 500, 0.7004052754499245]
-[2, 200, 5, 0.48462606908755335]
-[2, 200, 10, 0.5290307141324619]
-[2, 200, 20, 0.8172263115816172]
-[2, 200, 50, 0.5554303199844285]
-[2, 200, 100, 0.562596427219888]
-[2, 200, 500, 0.7934002451545568]
-[2, 500, 5, 0.6536930773192082]
-[2, 500, 10, 0.71542675452038]
-[2, 500, 20, 0.7425915051869251]
-[2, 500, 50, 0.684877403016001]
-[2, 500, 100, 0.67980969372584]
+2019-04-08 20:44:46 WARN  NativeCodeLoader:62 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+2019-04-08 20:44:49 WARN  TaskSetManager:66 - Stage 0 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:44:51 WARN  TaskSetManager:66 - Stage 2 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:44:51 WARN  TaskSetManager:66 - Stage 3 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:44:51 WARN  TaskSetManager:66 - Stage 4 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:44:53 WARN  TaskSetManager:66 - Stage 6 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:44:54 WARN  BLAS:61 - Failed to load implementation from: com.github.fommil.netlib.NativeSystemBLAS
+2019-04-08 20:44:54 WARN  BLAS:61 - Failed to load implementation from: com.github.fommil.netlib.NativeRefBLAS
+2019-04-08 20:45:08 WARN  LAPACK:61 - Failed to load implementation from: com.github.fommil.netlib.NativeSystemLAPACK
+2019-04-08 20:45:08 WARN  LAPACK:61 - Failed to load implementation from: com.github.fommil.netlib.NativeRefLAPACK
+2019-04-08 20:45:45 WARN  TaskSetManager:66 - Stage 8 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:45 WARN  TaskSetManager:66 - Stage 9 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:49 WARN  TaskSetManager:66 - Stage 10 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:53 WARN  Instrumentation:66 - [1350aa8a] Initial coefficients will be ignored! Its dimensions (1, 100) did not match the expected size (1, 100)
+2019-04-08 20:45:53 WARN  TaskSetManager:66 - Stage 12 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:53 WARN  TaskSetManager:66 - Stage 14 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:53 WARN  TaskSetManager:66 - Stage 16 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:54 WARN  TaskSetManager:66 - Stage 18 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:54 WARN  TaskSetManager:66 - Stage 20 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:54 WARN  TaskSetManager:66 - Stage 22 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:54 WARN  TaskSetManager:66 - Stage 24 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:55 WARN  TaskSetManager:66 - Stage 26 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:55 WARN  TaskSetManager:66 - Stage 28 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:55 WARN  TaskSetManager:66 - Stage 30 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:55 WARN  TaskSetManager:66 - Stage 32 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:56 WARN  TaskSetManager:66 - Stage 34 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:56 WARN  TaskSetManager:66 - Stage 36 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:56 WARN  TaskSetManager:66 - Stage 38 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:56 WARN  TaskSetManager:66 - Stage 40 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:45:57 WARN  TaskSetManager:66 - Stage 42 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:46:03 WARN  TaskSetManager:66 - Stage 53 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.
+2019-04-08 20:46:08 WARN  TaskSetManager:66 - Stage 55 contains a task of very large size (16385 KB). The maximum recommended task size is 100 KB.

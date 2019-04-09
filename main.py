@@ -12,7 +12,7 @@ from pyspark.mllib.classification import LogisticRegressionWithSGD, LogisticRegr
 from pyspark.mllib.regression import LinearRegressionWithSGD
 from pyspark.mllib.regression import LabeledPoint
 from pyspark.mllib.feature import PCA
-from pyspark.mllib.evaluation import BinaryClassificationMetrics
+from pyspark.mllib.evaluation import BinaryClassificationMetrics, MulticlassMetrics
 from pyspark.mllib.tree import RandomForest
 from pyspark.mllib.classification import SVMModel, SVMWithSGD
 
@@ -73,12 +73,13 @@ windspeed = f2["WindSpeed"][:]
 raw_data = []
 # raw_data_ = []
 
-for i in range(7220):
+for i in range(7220): # 原始数据处理
 	timeslot = timeslots[i].decode('utf8')
 	date = timeslot[:8]
 	is_weekend = isWeekend(date)
 	slot = int(timeslot[8:])
 	item = []
+	# item_ = []
 
 	# inflows of all grids is equal to outflows of all grids
 	# inflows = 0
@@ -91,7 +92,6 @@ for i in range(7220):
 			# outflows += data[i][1][j][k]
 			# flows += data[i][0][j][k]
 
-	
 	# raw_data.append([slot, inflows, outflows, temperature[i], windspeed[i], weather[i], is_weekend])
 	# raw_data.append([slot, flows.item(), temperature[i].item(), windspeed[i].item(), weather[i].tolist(), 1 if is_weekend else 0])
 	# item = [flows.item()/10000, temperature[i].item(), windspeed[i].item()]
@@ -102,59 +102,34 @@ for i in range(7220):
 	item += slot_one_hot
 	item += [1 if is_weekend else 0]
 	raw_data.append(item)
+	# raw_data_.append(item_)
 
 conf = SparkConf()
 conf.set('spark.executor.memory', '8g')
 conf.set("spark.driver.memory", '8g')
 sc = SparkContext(conf = conf)
 rdd = sc.parallelize(raw_data)
+# rdd_ = sc.parallelize(raw_data_)
 # print('共有' + str(rdd.count()) + ' 项数据')
 
 feature_rdd = rdd.map(lambda line: line[:-1])
-label_rdd = rdd.map(lambda line: line[-1:])
-
-'''
-sqlContext = SQLContext(sc)
-
-scaler = StandardScaler(withStd = True, withMean = True).fit(feature_rdd)
-scaler_feature_dataset = scaler.transform(feature_rdd) #.zip(rdd_).map(lambda line: line[0].tolist() + line[1]).map(lambda x: (Vectors.dense([x[i] for i in range(0, 68)])))
-
-pca_model = PCA(20).fit(scaler_feature_dataset)
-pca_scaler_feature_dataset = pca_model.transform(scaler_feature_dataset)
-
-dataset = pca_scaler_feature_dataset.zip(label_rdd.map(lambda line: line[0])).map(lambda line: LabeledPoint(line[1], line[0]))
-
-# dataset = sqlContext.createDataFrame(dataset)
-# dataset.show(5, False)
-# os._exit(0)
-
-(train_data, test_data) = dataset.randomSplit([0.8, 0.2])
-
-# model = LogisticRegressionWithSGD.train(train_data, iterations = 200)
-model = SVMWithSGD.train(train_data, iterations = 200)
-# model = RandomForest.trainClassifier(train_data, numClasses = 2, numTrees = 200, categoricalFeaturesInfo = {}, maxDepth=5) #, featureSubsetStrategy="auto",impurity='gini', maxDepth=4, maxBins=32)
-predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p)) #.map(lambda p: 1.0 if p > 0 else 0.0)
-predict_real = predict.zip(test_data.map(lambda p: p.label))
-metrics = BinaryClassificationMetrics(predict_real)
-AUC = metrics.areaUnderROC
-
-dataset = sqlContext.createDataFrame(predict_real)
-dataset.show(30, False)
-
-## 打印AUC
-print('AUC = ' + str(AUC))
-'''
+scaler = StandardScaler(withStd = True, withMean = True).fit(feature_rdd) # 进行数值的标准化
+feature_rdd = scaler.transform(feature_rdd) # 特征 rdd
+label_rdd = rdd.map(lambda line: line[-1:]) # 标签 rdd
 
 def getAUC(feature_rdd, label_rdd, do_pca, pca_k, model_type, model_iterations):
-	scaler = StandardScaler(withStd = True, withMean = True).fit(feature_rdd)
-	scaler_feature_dataset = scaler.transform(feature_rdd) 
-
-	scaler_feature_dataset_ = scaler_feature_dataset
+	# feature_rdd 特征值
+	# label_rdd 标签
+	# do_pca 是否进行主成分分析 True/False
+	# pca_k 主成分分析后保留的特征数
+	# model_type 使用的模型种类 1、线性回归 2、Logistic回归 3、Logistic回归 4、SVM 5、随即森林 （2、3都是逻辑回归）
+	# model_iterations 迭代次数，对于随机森林而言是决策树的数量
+	pca_feature_rdd = feature_rdd
 	if do_pca:
-		pca_model = PCA(pca_k).fit(scaler_feature_dataset)
-		scaler_feature_dataset_ = pca_model.transform(scaler_feature_dataset)
+		pca_model = PCA(pca_k).fit(feature_rdd)
+		pca_feature_rdd = pca_model.transform(feature_rdd)
 
-	dataset = scaler_feature_dataset_.zip(label_rdd.map(lambda line: line[0])).map(lambda line: LabeledPoint(line[1], line[0]))
+	dataset = pca_feature_rdd.zip(label_rdd.map(lambda line: line[0])).map(lambda line: LabeledPoint(line[1], line[0]))
 	(train_data, test_data) = dataset.randomSplit([0.8, 0.2])
 
 	model = None
@@ -175,16 +150,28 @@ def getAUC(feature_rdd, label_rdd, do_pca, pca_k, model_type, model_iterations):
 		model = RandomForest.trainClassifier(train_data, numClasses = 2, numTrees = model_iterations, categoricalFeaturesInfo = {}, maxDepth=5)
 		predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p))
 
-	predict_real = predict.zip(test_data.map(lambda p: p.label))
-	metrics = BinaryClassificationMetrics(predict_real)
-	AUC = metrics.areaUnderROC
+	predict_real = predict.zip(test_data.map(lambda p: p.label)) 
 
-	return AUC
+	metrics_bi = BinaryClassificationMetrics(predict_real)
+	metrics_mul = MulticlassMetrics(predict_real)
 
-# AUC = getAUC(feature_rdd, label_rdd, True, 500, 1, 100)
-# print(AUC)
-# os._exit(0)
+	AUC = metrics_bi.areaUnderROC
+	# 一下三项好像不准确
+	# precision = metrics_mul.precision()
+	# recall = metrics_mul.recall()
+	# f1Score = metrics_mul.fMeasure()
 
+	print(predict_real.count()) # 打印 predict_real 的数据数量
+	print(metrics_mul.confusionMatrix()) # 打印混淆矩阵
+
+	return AUC #, recall, precision, f1Score
+
+# AUC, recall, precision, f1Score =
+# print(AUC, recall, precision, f1Score)
+AUC = getAUC(feature_rdd, label_rdd, True, 100, 3, 100)
+print(AUC)
+
+'''
 f3 = open('result.txt', 'w')
 result = []
 model_type = [2, 4, 5] #[1, 2, 3, 4, 5]
@@ -212,6 +199,7 @@ print('\n', file = f3)
 print(best, file = f3)
 
 f3.close()
+'''
 
 f1.close()
 f2.close()
