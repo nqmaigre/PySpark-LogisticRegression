@@ -38,8 +38,8 @@ datas = raw_h5f['datas'][:] # an array which has 138 elements
 # 3 means that for every slot, inflow, outflow and inflow-outflow are taken into account
 others = raw_h5f['others'][:] # an array which has 138 elements
 # print(others.shape) 
-# the shape of others is (138, 67)
-# 67 refers to other information such as weather and windspeed 
+# the shape of others is (138, 19)
+# 19 refers to other information such as weather and windspeed 
 labels = raw_h5f['labels'][:] # an array which has 138 elements
 # print(labels.shape) 
 # the shape of labels is (138, 2)
@@ -56,7 +56,7 @@ gen_d = gen_h5f['datas'][:]
 # the shape of gen_d is (828, 32, 32, 144)
 gen_o = gen_h5f['others'][:]
 # print(gen_o.shape)
-# the shape of gen_d is (828, 67)
+# the shape of gen_d is (828, 19)
 gen_l = gen_h5f['labels'][:]
 # print(gen_l.shape)
 # the shape of gen_l is (828, 2)
@@ -75,7 +75,7 @@ for i in range(len(datas)):
 				count += 1
 datas = np.array(datas_)
 
-datas_ = len(datas)*[(32*32*48*2+67+1)*[0.0]]
+datas_ = len(datas)*[(32*32*48*2+19+1)*[0.0]]
 for i in range(len(datas)):
 	datas_[i] = np.concatenate((datas[i], others[i], np.array([labels[i][0]])))
 datas = np.array(datas_)
@@ -93,7 +93,7 @@ for i in range(len(gen_d)):
 				count += 1
 gen_d = np.array(gen_d_)
 
-gen_d_ = len(gen_d)*[(32*32*48*2+67+1)*[0.0]]
+gen_d_ = len(gen_d)*[(32*32*48*2+19+1)*[0.0]]
 for i in range(len(gen_d)):
 	gen_d_[i] = np.concatenate((gen_d[i], gen_o[i], np.array([gen_l[i][0]])))
 gen_d = np.array(gen_d_)

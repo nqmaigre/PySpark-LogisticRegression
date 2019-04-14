@@ -30,14 +30,14 @@ logging.getLogger('tensorflow').disabled = True
 raw_h5f = h5py.File('raw_data.h5', 'r')
 datas = raw_h5f['datas'][:] # an array which has 138 elements
 # print(datas.shape) 
-# the shape of datas is (138, 32, 32, 144) 
+# the shape of datas is (138, 32, 32, 96) 
 # 32*32 refers to the 32*32 grids
-# 144 = 48*3, 48 means that every day has 48 slots
-# 3 means that for every slot, inflow, outflow and inflow-outflow are taken into account
+# 96 = 48*2, 48 means that every day has 48 slots
+# 2 means that for every slot, inflow, outflow are taken into account
 others = raw_h5f['others'][:] # an array which has 138 elements
 # print(others.shape) 
-# the shape of others is (138, 67)
-# 67 refers to other information such as weather and windspeed 
+# the shape of others is (138, 19)
+# 19 refers to other information such as weather and windspeed 
 labels = raw_h5f['labels'][:] # an array which has 138 elements
 # print(labels.shape) 
 # the shape of labels is (138, 2)
@@ -51,10 +51,10 @@ print('read raw data ok')
 gen_h5f = h5py.File('gen_data.h5', 'r')
 gen_d = gen_h5f['datas'][:]
 # print(gen_d.shape)
-# the shape of gen_d is (828, 32, 32, 144)
+# the shape of gen_d is (828, 32, 32, 96)
 gen_o = gen_h5f['others'][:]
 # print(gen_o.shape)
-# the shape of gen_d is (828, 67)
+# the shape of gen_d is (828, 19)
 gen_l = gen_h5f['labels'][:]
 # print(gen_l.shape)
 # the shape of gen_l is (828, 2)
@@ -94,27 +94,27 @@ def max_pool_4x4(x):
 	return tf.nn.max_pool(x, ksize=[1, 4, 4, 1],
                     	strides=[1, 4, 4, 1], padding='SAME')
 
-datas_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 48*3]) # use datas/gen_d as input
-other_placeholder = tf.placeholder(tf.float32, [None, 67]) # use others/gen_o as input
+datas_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 48*2]) # use datas/gen_d as input
+other_placeholder = tf.placeholder(tf.float32, [None, 19]) # use others/gen_o as input
 labels_placeholder = tf.placeholder(tf.float32, [None, 2]) # use labels/gen_l as input
 dropout_placeholder = tf.placeholder(tf.float32)
 
 # num_conv1 = 16 # 第二层卷积核数量
 # num_conv2 = 32 # 第二层卷积核数量
 # num_fc = 128 # inflow outflow 特征提取数量
-# num_other = 67 # 其他信息的特征数量
+# num_other = 19 # 其他信息的特征数量
 # num_o_fc1 = 128 # 其他信息中提取出的特振数量
 # num_fc2 = 128 # 所有特征提取出的特征数量
 
 num_conv1 = 16 # the amount of convolution kernels of layer1
 num_conv2 = 32 # the amount of convolution kernels of layer2
 num_fc = 128 # the amount of features extraced by CNN
-num_other = 67 # the dimensions of others/gen_o
+num_other = 19 # the dimensions of others/gen_o
 num_o_fc1 = 128 # the amount of features extraced by normal NN
 num_fc2 = 64 # the amount of features extraced by the total network
 
 # convulutional layer1
-W_conv1 = weight_variable([5, 5, 48*3, num_conv1])
+W_conv1 = weight_variable([5, 5, 48*2, num_conv1])
 b_conv1 = bias_variable([num_conv1])
 h_conv1 = tf.nn.relu(conv2d(datas_placeholder, W_conv1) + b_conv1)
 h_pool1 = max_pool_2x2(h_conv1)
@@ -137,7 +137,7 @@ h_o_fc1 = tf.nn.relu(tf.matmul(other_placeholder, W_o_fc1) + b_o_fc1)
 h_o_fc1_drop = tf.nn.dropout(h_o_fc1, dropout_placeholder) # use dropout to avoid overfitting
 
 # concatenate the features extracted from CNN and normal NN
-h_concat = tf.concat([h_fc1_drop, h_o_fc1_drop], axis=1) #tf.reshape(tf.concat(1, [h_fc1, other_placeholder]), [-1, num_fc+67])
+h_concat = tf.concat([h_fc1_drop, h_o_fc1_drop], axis=1) #tf.reshape(tf.concat(1, [h_fc1, other_placeholder]), [-1, num_fc+19])
 
 W_fc2 = weight_variable([num_fc+num_o_fc1, num_fc2])
 b_fc2 = bias_variable([num_fc2])
@@ -170,12 +170,12 @@ sess.run(tf.initialize_all_variables())
 
 saver = tf.train.Saver()
 # the model has been trained and saved, so now can be restored
-ckpt = tf.train.get_checkpoint_state('./checkpoint/')
-saver.restore(sess, ckpt.all_model_checkpoint_paths[0])
-print(ckpt)
+# ckpt = tf.train.get_checkpoint_state('./checkpoint/')
+# saver.restore(sess, ckpt.all_model_checkpoint_paths[0])
+# print(ckpt)
 
 # because the model has been trained and resotred, so it doesn't have to be trained now
-'''
+
 # train the model
 for i in range(10000):
 	rand_index = np.random.choice(x_train.shape[0], size = 32)
@@ -200,8 +200,8 @@ for i in range(10000):
 		train_loss = cross_entropy.eval(train_feed_dict)
 		print("step %d, accuracy %g, test_accuracy %g, loss %g"%(i, train_accuracy, test_accuracy, train_loss))
 
-	# if (i+1) % 1000 == 0:
-	# 	saver.save(sess, './checkpoint/MyModel', global_step=(i+1))
+	if (i+1) % 1000 == 0:
+		saver.save(sess, './checkpoint/MyModel', global_step=(i+1))
 
 	train_step.run(feed_dict={
 		datas_placeholder: rand_x, 
@@ -211,7 +211,7 @@ for i in range(10000):
 	})
 
 print('train ends')
-'''
+
 
 # use raw data to test the model
 test_feed_dict = {
@@ -243,7 +243,7 @@ for i in range(len(x_test)):
 	
 	temp = sess.run(h_fc2, feed_dict={
 		datas_placeholder: np.array(d).reshape((1, 32, 32, 48*3)),
-		other_placeholder: np.array(o).reshape((1, 67)),
+		other_placeholder: np.array(o).reshape((1, 19)),
 		dropout_placeholder: 1.0})[0]
 	raw_data.append(temp.tolist() + [int(l[0])])
 

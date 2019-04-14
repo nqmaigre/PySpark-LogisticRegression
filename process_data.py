@@ -101,7 +101,7 @@ while True:
 	is_weekend = isWeekend(date)
 	slot = int(timeslot[8:])
 
-	flow = 32*[32*[48*3*[0]]]
+	flow = 32*[32*[48*2*[0]]]
 	count = 0
 	for m in range(48):
 		# i+m 
@@ -109,9 +109,8 @@ while True:
 		outflow = data[i+m][1] # 32*32	
 		for j in range(32):
 			for k in range(32):
-				flow[j][k][3*m] = inflow[j][k]/100.0
-				flow[j][k][3*m+1] = outflow[j][k]/100.0
-				flow[j][k][3*m+1] = (inflow[j][k]-outflow[j][k])/100.0
+				flow[j][k][2*m] = inflow[j][k]/100.0
+				flow[j][k][2*m+1] = outflow[j][k]/100.0
 
 	datas.append(flow)
 	labels.append([1, 0] if is_weekend else [0, 1])
@@ -119,9 +118,6 @@ while True:
 	item = []
 	item += [temperature[i].item()/10.0, windspeed[i].item()/10.0]
 	item += map(lambda x: int(x), weather[i].tolist())
-	slot_one_hot = [0] * 48
-	slot_one_hot[slot-1] = 1
-	item += slot_one_hot
 	others.append(item)
 
 	i += 48
@@ -152,18 +148,18 @@ def gen_new_data(raw_d, raw_o, raw_l, limit=10.0):
 		d = raw_d[i] # 32*32*(48*3)
 		o = raw_o[i] # 67
 		l = raw_l[i]
-		d_ = 32*[32*[48*3*[0]]]
-		o_ = 67*[0]
+		d_ = 32*[32*[48*2*[0]]]
+		o_ = 19*[0]
 		l_ = 2*[0]
 
 		for j in range(32):
 			for k in range(32):
-				for m in range(48*3):
+				for m in range(48*2):
 					d_[j][k][m] = d[j][k][m].copy()
 					d_[j][k][m] *= 1 + (random.uniform(-limit, limit)/100)
 					# print(d[j][k][m], ' ', d_[j][k][m])
 
-		for j in range(67):
+		for j in range(19):
 			o_[j] = o[j].copy()
 			o_[j] *= 1 + (random.uniform(-limit, limit)/100)
 			# print(o[j], ' ', o_[j])
@@ -177,10 +173,10 @@ def gen_new_data(raw_d, raw_o, raw_l, limit=10.0):
 	return np.array(new_d), np.array(new_o), np.array(new_l)
 
 # use gen_new_data to generate more datas
-gen_d, gen_o, gen_l = gen_new_data(datas, others, labels, 30.0)
-for i in range(20):
+gen_d, gen_o, gen_l = gen_new_data(datas, others, labels, 20.0)
+for i in range(4):
 	print('gen batch %d'%(i+1))
-	new_d, new_o, new_l = gen_new_data(datas, others, labels, 15.0)
+	new_d, new_o, new_l = gen_new_data(datas, others, labels, 10.0)
 	gen_d = np.concatenate((gen_d, new_d))
 	gen_o = np.concatenate((gen_o, new_o))
 	gen_l = np.concatenate((gen_l, new_l))
