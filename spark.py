@@ -69,9 +69,9 @@ for i in range(len(datas)):
 	for j in range(32):
 		for k in range(32):
 			for m in range(48):
-				datas_[i][count] = datas[i][j][k][3*m]
+				datas_[i][count] = datas[i][j][k][2*m]
 				count += 1
-				datas_[i][count] = datas[i][j][k][3*m+1]
+				datas_[i][count] = datas[i][j][k][2*m+1]
 				count += 1
 datas = np.array(datas_)
 
@@ -87,9 +87,9 @@ for i in range(len(gen_d)):
 	for j in range(32):
 		for k in range(32):
 			for m in range(48):
-				gen_d_[i][count] = gen_d[i][j][k][3*m]
+				gen_d_[i][count] = gen_d[i][j][k][2*m]
 				count += 1
-				gen_d_[i][count] = gen_d[i][j][k][3*m+1]
+				gen_d_[i][count] = gen_d[i][j][k][2*m+1]
 				count += 1
 gen_d = np.array(gen_d_)
 
