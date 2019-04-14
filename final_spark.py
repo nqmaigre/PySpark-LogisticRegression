@@ -260,7 +260,7 @@ feature_rdd = scaler.transform(feature_rdd) # feature rdd
 label_rdd = rdd.map(lambda line: line[-1:]) # label rdd
 # now the 
 
-def getAUC(feature_rdd, label_rdd, do_pca, pca_k, model_type, model_iterations):
+def train_model(feature_rdd, label_rdd, do_pca, pca_k, model_type, model_iterations):
 	# feature_rdd 
 	# label_rdd 
 	# do_pca: whether do PCA to select features of not (True/False)
@@ -311,7 +311,7 @@ def getAUC(feature_rdd, label_rdd, do_pca, pca_k, model_type, model_iterations):
 
 	return AUC, recall, precision, f1Score
 
-AUC, recall, precision, f1Score = getAUC(feature_rdd, label_rdd, False, -1, 2, 1000)
+AUC, recall, precision, f1Score = train_model(feature_rdd, label_rdd, False, -1, 2, 1000)
 print('AUC: ', AUC)
 print('recall: ', recall)
 print('precision: ', precision)
