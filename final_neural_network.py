@@ -5,19 +5,6 @@ import tensorflow as tf
 import logging
 import os
 import random
-import pyspark as sp
-from pyspark.conf import SparkConf
-from pyspark.context import SparkContext
-from pyspark.sql import SQLContext
-from pyspark.mllib.linalg import Vectors
-from pyspark.mllib.feature import StandardScaler, Normalizer, ChiSqSelector
-from pyspark.mllib.classification import LogisticRegressionWithSGD, LogisticRegressionWithLBFGS
-from pyspark.mllib.regression import LinearRegressionWithSGD
-from pyspark.mllib.regression import LabeledPoint
-from pyspark.mllib.feature import PCA
-from pyspark.mllib.evaluation import BinaryClassificationMetrics, MulticlassMetrics
-from pyspark.mllib.tree import RandomForest
-from pyspark.mllib.classification import SVMModel, SVMWithSGD
 
 # disable the warnings
 logging.getLogger('tensorflow').disabled = True
@@ -169,12 +156,6 @@ sess = tf.InteractiveSession()
 sess.run(tf.initialize_all_variables())
 
 saver = tf.train.Saver()
-# the model has been trained and saved, so now can be restored
-# ckpt = tf.train.get_checkpoint_state('./checkpoint/')
-# saver.restore(sess, ckpt.all_model_checkpoint_paths[0])
-# print(ckpt)
-
-# because the model has been trained and resotred, so it doesn't have to be trained now
 
 # train the model
 for i in range(10000):
@@ -225,94 +206,3 @@ test_loss = cross_entropy.eval(test_feed_dict)
 
 print("accuracy on test data %g, loss on test data %g"%(test_accuracy, test_loss))
 # now the classification work finished, and got 100% accuracy
-# os._exit(0)
-
-
-# also, the features extracted by neural network can be saved
-# then use the extracted features to feed the spark model
-
-# following is using spark to do the classification work
-# the input is provided by neural network
-
-# extract the features of raw data
-raw_data = []
-for i in range(len(x_test)):
-	d = x_test[i]
-	o = o_test[i]
-	l = y_test[i]
-	
-	temp = sess.run(h_fc2, feed_dict={
-		datas_placeholder: np.array(d).reshape((1, 32, 32, 48*3)),
-		other_placeholder: np.array(o).reshape((1, 19)),
-		dropout_placeholder: 1.0})[0]
-	raw_data.append(temp.tolist() + [int(l[0])])
-
-conf = SparkConf()
-conf.set('spark.executor.memory', '8g')
-conf.set("spark.driver.memory", '8g')
-sc = SparkContext(conf = conf)
-rdd = sc.parallelize(raw_data)
-
-feature_rdd = rdd.map(lambda line: line[:-1])
-scaler = StandardScaler(withStd = True, withMean = True).fit(feature_rdd) 
-feature_rdd = scaler.transform(feature_rdd) # feature rdd
-label_rdd = rdd.map(lambda line: line[-1:]) # label rdd
-# now the 
-
-def getAUC(feature_rdd, label_rdd, do_pca, pca_k, model_type, model_iterations):
-	# feature_rdd 
-	# label_rdd 
-	# do_pca: whether do PCA to select features of not (True/False)
-	# pca_k: if do PCA, then how many features to select
-	# model_type: type of model (1. LinearRegressionWithSGD 
-	# 							 2. LogisticRegressionWithSGD 
-	#  							 3. LogisticRegressionWithLBFGS 
-	#					  		 4. SVM  5. RandomForest)
-	# model_iterations: the train iterations (for RandomForest, this parameter means the amount of trees)
-	pca_feature_rdd = feature_rdd
-	if do_pca:
-		pca_model = PCA(pca_k).fit(feature_rdd)
-		pca_feature_rdd = pca_model.transform(feature_rdd)
-
-	dataset = pca_feature_rdd.zip(label_rdd.map(lambda line: line[0])).map(lambda line: LabeledPoint(line[1], line[0]))
-	(train_data, test_data) = dataset.randomSplit([0.8, 0.2]) # devide the dataset into train data and test data
-
-	model = None
-	predict = None
-	if model_type == 1:
-		model = LinearRegressionWithSGD.train(train_data, iterations = model_iterations)
-		predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p)).map(lambda p: 1.0 if p > 0 else 0.0)
-	elif model_type == 2:
-		model = LogisticRegressionWithSGD.train(train_data, iterations = model_iterations)
-		predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p))
-	elif model_type == 3:
-		model = LogisticRegressionWithLBFGS.train(train_data, iterations = model_iterations)
-		predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p))
-	elif model_type == 4:
-		model = SVMWithSGD.train(train_data, iterations = model_iterations)
-		predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p))
-	else:
-		model = RandomForest.trainClassifier(train_data, numClasses = 2, numTrees = model_iterations, categoricalFeaturesInfo = {}, maxDepth=5)
-		predict = model.predict(test_data.map(lambda p: p.features)).map(lambda p: float(p))
-
-	predict_real = predict.zip(test_data.map(lambda p: p.label)) 
-	metrics_bi = BinaryClassificationMetrics(predict_real)
-	metrics_mul = MulticlassMetrics(predict_real)
-
-	AUC = metrics_bi.areaUnderROC
-	precision = metrics_mul.precision()
-	recall = metrics_mul.recall()
-	f1Score = metrics_mul.fMeasure()
-
-	print('dataset size: ', dataset.count())
-	print('test data size: ', predict_real.count())
-	print('confusion matrix:\n', metrics_mul.confusionMatrix()) # 打印混淆矩阵
-
-	return AUC, recall, precision, f1Score
-
-AUC, recall, precision, f1Score = getAUC(feature_rdd, label_rdd, False, -1, 2, 1000)
-print('AUC: ', AUC)
-print('recall: ', recall)
-print('precision: ', precision)
-print('f1Score: ', f1Score)
-
