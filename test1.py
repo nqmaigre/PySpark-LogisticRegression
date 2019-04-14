@@ -50,23 +50,23 @@ gen_l = gen_h5f['labels'][:]
 gen_h5f.close()
 print('read gen data ok')
 
-datas_ = len(datas)*[32*[32*[48*2*[0]]]]
+datas_ = np.array(len(datas)*[32*[32*[48*2*[0.0]]]])
 for i in range(len(datas)):
-        for j in range(32):
-                for k in range(32):
-                        for m in range(48):
-                                datas_[i][j][k][2*m] = datas[i][j][k][3*m].item()
-                                datas_[i][j][k][2*m+1] = datas[i][j][k][3*m+1].item()
-datas = np.array(datas_)
+    for j in range(32):
+        for k in range(32):
+            for m in range(48):
+                datas_[i][j][k][2*m] = datas[i][j][k][3*m]
+                datas_[i][j][k][2*m+1] = datas[i][j][k][3*m+1]
+datas = datas_
 
-gen_d_ = len(gen_d)*[32*[32*[48*2*[0]]]]
+gen_d_ = np.array(len(gen_d)*[32*[32*[48*2*[0.0]]]])
 for i in range(len(gen_d)):
-        for j in range(32):
-                for k in range(32):
-                        for m in range(48):
-                                gen_d_[i][j][k][2*m] = gen_d[i][j][k][3*m].item()
-                                gen_d_[i][j][k][2*m+1] = gen_d[i][j][k][3*m+1].item()
-gen_d = np.array(gen_d_)
+    for j in range(32):
+        for k in range(32):
+            for m in range(48):
+                gen_d_[i][j][k][2*m] = gen_d[i][j][k][3*m]
+                gen_d_[i][j][k][2*m+1] = gen_d[i][j][k][3*m+1]
+gen_d = gen_d_
 
 # use raw data as test data
 x_test = datas
@@ -83,23 +83,23 @@ o_train = gen_o
 # use normal NN to extract the information from others/gen_o
 # then combine the information extracted by CNN and the information extracted from others/gen_o, and use following neural network to do classification work
 def weight_variable(shape):
-        initial = tf.truncated_normal(shape, stddev=0.1)
-        return tf.Variable(initial)
+    initial = tf.truncated_normal(shape, stddev=0.1)
+    return tf.Variable(initial)
 
 def bias_variable(shape):
-        initial = tf.constant(0.1, shape=shape)
-        return tf.Variable(initial)
+    initial = tf.constant(0.1, shape=shape)
+    return tf.Variable(initial)
 
 def conv2d(x, W):
-        return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 def max_pool_2x2(x):
-        return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-                        strides=[1, 2, 2, 1], padding='SAME')
+    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
+                    strides=[1, 2, 2, 1], padding='SAME')
 
 def max_pool_4x4(x):
-        return tf.nn.max_pool(x, ksize=[1, 4, 4, 1],
-                        strides=[1, 4, 4, 1], padding='SAME')
+    return tf.nn.max_pool(x, ksize=[1, 4, 4, 1],
+                    strides=[1, 4, 4, 1], padding='SAME')
 
 datas_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 48*2]) # use datas/gen_d as input
 other_placeholder = tf.placeholder(tf.float32, [None, 67]) # use others/gen_o as input
@@ -185,46 +185,46 @@ sess.run(tf.initialize_all_variables())
 
 # train the model
 for i in range(10000):
-        rand_index = np.random.choice(x_train.shape[0], size = 32)
-        rand_x = x_train[rand_index]
-        rand_y = y_train[rand_index]
-        rand_o = o_train[rand_index]
-        if i % 100 == 0:
-                train_feed_dict = {
-                        datas_placeholder: rand_x,
-                        labels_placeholder: rand_y,
-                        other_placeholder: rand_o,
-                        dropout_placeholder: 1.0
-                }
-                test_feed_dict = {
-                        datas_placeholder: x_test,
-                        labels_placeholder: y_test,
-                        other_placeholder: o_test,
-                        dropout_placeholder: 1.0
-                }
-                test_accuracy = accuracy.eval(test_feed_dict)
-                train_accuracy = accuracy.eval(train_feed_dict)
-                train_loss = cross_entropy.eval(train_feed_dict)
-                print("step %d, accuracy %g, test_accuracy %g, loss %g"%(i, train_accuracy, test_accuracy, train_loss))
+    rand_index = np.random.choice(x_train.shape[0], size = 32)
+    rand_x = x_train[rand_index]
+    rand_y = y_train[rand_index]
+    rand_o = o_train[rand_index]
+    if i % 100 == 0:
+        train_feed_dict = {
+            datas_placeholder: rand_x,
+            labels_placeholder: rand_y,
+            other_placeholder: rand_o,
+            dropout_placeholder: 1.0
+        }
+        test_feed_dict = {
+            datas_placeholder: x_test,
+            labels_placeholder: y_test,
+            other_placeholder: o_test,
+            dropout_placeholder: 1.0
+        }
+        test_accuracy = accuracy.eval(test_feed_dict)
+        train_accuracy = accuracy.eval(train_feed_dict)
+        train_loss = cross_entropy.eval(train_feed_dict)
+        print("step %d, accuracy %g, test_accuracy %g, loss %g"%(i, train_accuracy, test_accuracy, train_loss))
 
-        # if (i+1) % 1000 == 0:
-        #       saver.save(sess, './checkpoint/MyModel', global_step=(i+1))
+    # if (i+1) % 1000 == 0:
+    #       saver.save(sess, './checkpoint/MyModel', global_step=(i+1))
 
-        train_step.run(feed_dict={
-                datas_placeholder: rand_x,
-                labels_placeholder: rand_y,
-                other_placeholder: rand_o,
-                dropout_placeholder: 0.5
-        })
+    train_step.run(feed_dict={
+        datas_placeholder: rand_x,
+        labels_placeholder: rand_y,
+        other_placeholder: rand_o,
+        dropout_placeholder: 0.5
+    })
 
 print('train ends')
 
 # use raw data to test the model
 test_feed_dict = {
-        datas_placeholder: x_test,
-        labels_placeholder: y_test,
-        other_placeholder: o_test,
-        dropout_placeholder: 1.0
+    datas_placeholder: x_test,
+    labels_placeholder: y_test,
+    other_placeholder: o_test,
+    dropout_placeholder: 1.0
 }
 test_accuracy = accuracy.eval(test_feed_dict)
 test_loss = cross_entropy.eval(test_feed_dict)

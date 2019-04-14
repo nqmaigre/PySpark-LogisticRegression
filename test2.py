@@ -6,7 +6,7 @@ import logging
 import os
 import random
 
-# inflow inflow-outflow & others
+# inflow-outflow & others
 
 # disable the warnings
 logging.getLogger('tensorflow').disabled = True
@@ -50,22 +50,20 @@ gen_l = gen_h5f['labels'][:]
 gen_h5f.close()
 print('read gen data ok')
 
-datas_ = len(datas)*[32*[32*[48*2*[0]]]]
+datas_ = len(datas)*[32*[32*[48*1*[0.0]]]]
 for i in range(len(datas)):
 	for j in range(32):
 		for k in range(32):
 			for m in range(48):
-				datas_[i][j][k][2*m] = datas[i][j][k][3*m].item()
-				datas_[i][j][k][2*m+1] = datas[i][j][k][3*m+2].item()
+				datas_[i][j][k][m] = datas[i][j][k][3*m+2]
 datas = np.array(datas_)
 
-gen_d_ = len(gen_d)*[32*[32*[48*2*[0]]]]
+gen_d_ = len(gen_d)*[32*[32*[48*1*[0.0]]]]
 for i in range(len(gen_d)):
 	for j in range(32):
 		for k in range(32):
 			for m in range(48):
-				gen_d_[i][j][k][2*m] = gen_d[i][j][k][3*m].item()
-				gen_d_[i][j][k][2*m+1] = gen_d[i][j][k][3*m+2].item()
+				gen_d_[i][j][k][m] = gen_d[i][j][k][3*m+2]
 gen_d = np.array(gen_d_)
 
 # use raw data as test data
@@ -101,7 +99,7 @@ def max_pool_4x4(x):
 	return tf.nn.max_pool(x, ksize=[1, 4, 4, 1],
                     	strides=[1, 4, 4, 1], padding='SAME')
 
-datas_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 48*2]) # use datas/gen_d as input
+datas_placeholder = tf.placeholder(tf.float32, [None, 32, 32, 48*1]) # use datas/gen_d as input
 other_placeholder = tf.placeholder(tf.float32, [None, 67]) # use others/gen_o as input
 labels_placeholder = tf.placeholder(tf.float32, [None, 2]) # use labels/gen_l as input
 dropout_placeholder = tf.placeholder(tf.float32)
@@ -116,12 +114,12 @@ dropout_placeholder = tf.placeholder(tf.float32)
 num_conv1 = 32 # the amount of convolution kernels of layer1
 num_conv2 = 64 # the amount of convolution kernels of layer2
 num_fc = 512 # the amount of features extraced by CNN
-# num_other = 67 # the dimensions of others/gen_o
-# num_o_fc1 = 128 # the amount of features extraced by normal NN
+num_other = 67 # the dimensions of others/gen_o
+num_o_fc1 = 512 # the amount of features extraced by normal NN
 num_fc2 = 256 # the amount of features extraced by the total network
 
 # convulutional layer1
-W_conv1 = weight_variable([5, 5, 48*2, num_conv1])
+W_conv1 = weight_variable([5, 5, 48*1, num_conv1])
 b_conv1 = bias_variable([num_conv1])
 h_conv1 = tf.nn.relu(conv2d(datas_placeholder, W_conv1) + b_conv1)
 h_pool1 = max_pool_2x2(h_conv1)
@@ -138,7 +136,6 @@ W_fc1 = weight_variable([8*8*num_conv2, num_fc])
 h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 h_fc1_drop = tf.nn.dropout(h_fc1, dropout_placeholder) # use dropout to avoid overfitting
 
-'''
 W_o_fc1 = weight_variable([num_other, num_o_fc1])
 b_o_fc1 = bias_variable([num_o_fc1])
 h_o_fc1 = tf.nn.relu(tf.matmul(other_placeholder, W_o_fc1) + b_o_fc1)
@@ -146,10 +143,10 @@ h_o_fc1_drop = tf.nn.dropout(h_o_fc1, dropout_placeholder) # use dropout to avoi
 
 # concatenate the features extracted from CNN and normal NN
 h_concat = tf.concat([h_fc1_drop, h_o_fc1_drop], axis=1) #tf.reshape(tf.concat(1, [h_fc1, other_placeholder]), [-1, num_fc+67])
-'''
-W_fc2 = weight_variable([num_fc, num_fc2])
+
+W_fc2 = weight_variable([num_fc+num_o_fc1, num_fc2])
 b_fc2 = bias_variable([num_fc2])
-h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+h_fc2 = tf.nn.relu(tf.matmul(h_concat, W_fc2) + b_fc2)
 h_fc2_drop = tf.nn.dropout(h_fc2, dropout_placeholder) # use dropout to avoid overfitting
 
 W_fc3 = weight_variable([num_fc2, 2])
@@ -160,7 +157,7 @@ y_conv = tf.nn.softmax(tf.matmul(h_fc2_drop, W_fc3) + b_fc3)
 tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_conv1)
 tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_conv2)
 tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_fc1)
-# tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_o_fc1)
+tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_o_fc1)
 tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_fc2)
 tf.add_to_collection(tf.GraphKeys.WEIGHTS, W_fc3)
 regularizer = tf.contrib.layers.l2_regularizer(scale=10.0/x_test.shape[0])
